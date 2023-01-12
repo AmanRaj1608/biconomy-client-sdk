@@ -2,7 +2,7 @@ import { JsonRpcProvider } from '@ethersproject/providers'
 
 // import { EntryPoint__factory } from '@account-abstraction/contracts'
 
-import { EntryPointFactoryContractV101 } from '@biconomy/ethers-lib'
+import { EntryPointFactoryContractV101 } from '@biconomy-sdk-dev/ethers-lib'
 
 import { ClientConfig } from './ClientConfig'
 import { SmartAccountAPI } from './SmartAccountAPI'

@@ -30,7 +30,7 @@ import {
   IMetaTransaction,
   NetworkConfig,
   ZERO_ADDRESS
-} from '@biconomy/core-types'
+} from '@biconomy-sdk-dev/core-types'
 import { TypedDataSigner } from '@ethersproject/abstract-signer'
 import NodeClient, {
   ChainConfig,
@@ -40,15 +40,15 @@ import NodeClient, {
   BalancesResponse,
   BalancesDto,
   UsdBalanceResponse
-} from '@biconomy/node-client'
-import { Web3Provider } from '@ethersproject/providers'
-import { IRelayer, RestRelayer } from '@biconomy/relayer'
+} from '@biconomy-sdk-dev/node-client'
+import { Provider, Web3Provider } from '@ethersproject/providers'
+import { IRelayer, RestRelayer } from '@biconomy-sdk-dev/relayer'
 import * as _ from 'lodash'
 import TransactionManager, {
   ContractUtils,
   smartAccountSignMessage,
   smartAccountSignTypedData
-} from '@biconomy/transactions'
+} from '@biconomy-sdk-dev/transactions'
 import EventEmitter from 'events'
 import { TransactionResponse } from '@ethersproject/providers'
 import { SmartAccountSigner } from './signers/SmartAccountSigner'
@@ -59,7 +59,7 @@ import {
   ERC4337EthersProvider,
   ERC4337EthersSigner,
   BaseWalletAPI
-} from '@biconomy/account-abstraction'
+} from '@biconomy-sdk-dev/account-abstraction'
 
 import { ethers, Signer } from 'ethers'
 import { TransactionRequest } from '@ethersproject/providers/lib'
@@ -83,12 +83,10 @@ class SmartAccount extends EventEmitter {
   // Chain configurations fetched from backend
   chainConfig!: ChainConfig[]
 
-  provider!: Web3Provider
-
   // 4337Provider
   aaProvider!: { [chainId: number]: ERC4337EthersProvider }
 
-  signer!: Signer & TypedDataSigner
+  signer!: Signer
 
   nodeClient!: NodeClient
 
@@ -120,7 +118,7 @@ class SmartAccount extends EventEmitter {
    * If you wish to use your own backend server and relayer service, pass the URLs here
    */
   // Note: Could remove WalletProvider later on
-  constructor(walletProvider: Web3Provider, config?: Partial<SmartAccountConfig>) {
+  constructor(signerOrProvider: Web3Provider | Signer, config?: Partial<SmartAccountConfig>) {
     super()
     if (config && config.debug === true) {
       isLogsEnabled = true
@@ -157,9 +155,15 @@ class SmartAccount extends EventEmitter {
     }
     this.supportedNetworkIds = this.#smartAccountConfig.supportedNetworksIds
 
+    if (Signer.isSigner(signerOrProvider)) {
+      this.signer = signerOrProvider
+    } else if (Provider.isProvider(signerOrProvider)) {
+      this.signer = new SmartAccountSigner(signerOrProvider)
+    } else {
+      this._logMessage('signer or provider is not valid')
+    }
+
     // Should not break if we make this wallet connected provider optional (We'd have JsonRpcProvider / JsonRpcSender)
-    this.provider = walletProvider
-    this.signer = new SmartAccountSigner(this.provider)
     this.nodeClient = new NodeClient({ txServiceUrl: this.#smartAccountConfig.backendUrl })
     this.relayer = new RestRelayer({
       url: this.#smartAccountConfig.relayerUrl,
@@ -185,7 +189,7 @@ class SmartAccount extends EventEmitter {
   }
 
   // Changes if we make change in nature of smart account signer
-  getsigner(): Signer & TypedDataSigner {
+  getsigner(): Signer {
     return this.signer
   }
 
@@ -293,12 +297,16 @@ class SmartAccount extends EventEmitter {
     this.setActiveChain(this.#smartAccountConfig.activeNetworkId)
 
     this.owner = await this.signer.getAddress()
+    console.log('owner address is ', this.owner)
 
     const chainConfig = (await this.nodeClient.getAllSupportedChains()).data
+    console.log('chainConfig')
 
     this.contractUtils = new ContractUtils(chainConfig)
+    console.log('this.contractUtils')
 
     for (let index = 0; index < this.#smartAccountConfig.supportedNetworksIds.length; index++) {
+      console.log('this.#smartAccountConfig.supportedNetworksIds[index]')
       const network = chainConfig.find(
         (element: ChainConfig) =>
           element.chainId === this.#smartAccountConfig.supportedNetworksIds[index]
@@ -308,6 +316,7 @@ class SmartAccount extends EventEmitter {
       }
     }
     await this.initializeContractsAtChain(this.#smartAccountConfig.activeNetworkId)
+    console.log('this.smartAccountState')
 
     this.transactionManager = new TransactionManager(this.smartAccountState)
 

@@ -7,7 +7,7 @@ import {
   TypedDataSigner,
   Signer as EthersSigner
 } from '@ethersproject/abstract-signer'
-import { ChainId } from '@biconomy/core-types'
+import { ChainId } from '@biconomy-sdk-dev/core-types'
 
 // Might as well be RpcRelayer
 // import { IRelayer, RestRelayer } from '@biconomy/relayer'

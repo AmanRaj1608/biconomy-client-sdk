@@ -1,4 +1,4 @@
-# `@biconomy/ethers-lib`
+# `@biconomy-sdk-dev/ethers-lib`
 
 # Biconomy SDK Ethers Lib
 

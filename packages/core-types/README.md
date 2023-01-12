@@ -1,4 +1,4 @@
-# `@biconomy/core-types`
+# `@biconomy-sdk-dev/core-types`
 
 # Biconomy SDK Types
 
@@ -14,5 +14,5 @@ import {
   SmartAccountVersion,
   GasLimit,
   ChainId
-} from "@biconomy/core-types";
+} from "@biconomy-sdk-dev/core-types";
 ```
