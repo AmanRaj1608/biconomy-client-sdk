@@ -162,6 +162,8 @@ class SmartAccount extends EventEmitter {
     } else {
       this._logMessage('signer or provider is not valid')
     }
+
+    // Should not break if we make this wallet connected provider optional (We'd have JsonRpcProvider / JsonRpcSender)
     this.nodeClient = new NodeClient({ txServiceUrl: this.#smartAccountConfig.backendUrl })
     this.relayer = new RestRelayer({
       url: this.#smartAccountConfig.relayerUrl,
