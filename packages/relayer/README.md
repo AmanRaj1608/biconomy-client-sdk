@@ -1,4 +1,4 @@
-# `@biconomy/relayer`
+# `@biconomy-sdk-dev/relayer`
 
 # Biconomy Relayer Client
 

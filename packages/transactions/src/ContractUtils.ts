@@ -6,8 +6,8 @@ import {
   MultiSendCallOnlyContract,
   SmartAccountContext,
   SmartAccountState
-} from '@biconomy/core-types'
-import { ChainConfig } from '@biconomy/node-client'
+} from '@biconomy-sdk-dev/core-types'
+import { ChainConfig } from '@biconomy-sdk-dev/node-client'
 import {
   getSmartWalletFactoryContract,
   getMultiSendContract,
@@ -16,8 +16,8 @@ import {
   findContractAddressesByVersion
 } from './utils/FetchContractsInfo'
 import { ethers, Signer } from 'ethers'
-import EvmNetworkManager from '@biconomy/ethers-lib'
-import { SmartAccountVersion } from '@biconomy/core-types'
+import EvmNetworkManager from '@biconomy-sdk-dev/ethers-lib'
+import { SmartAccountVersion } from '@biconomy-sdk-dev/core-types'
 
 class ContractUtils {
   ethAdapter!: { [chainId: number]: EvmNetworkManager }

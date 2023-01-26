@@ -1,4 +1,4 @@
-import { Transaction, ChainId, FeeQuote } from '@biconomy/core-types'
+import { Transaction, ChainId, FeeQuote } from '@biconomy-sdk-dev/core-types'
 
 export type PrepareRefundTransactionDto = {
   version: string
