@@ -49,5 +49,6 @@
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
     "@nomiclabs/hardhat-ethers": "^2.0.0",
     "hardhat": "^2.11.0"
-  }
+  },
+  "gitHead": "bdaf60c7ca514e53f8b96fbf0935b0786539b56c"
 }

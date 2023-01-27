@@ -66,5 +66,6 @@
     "@types/mocha": "^9.1.1",
     "concurrently": "^7.4.0",
     "lodash": "^4.17.21"
-  }
+  },
+  "gitHead": "bdaf60c7ca514e53f8b96fbf0935b0786539b56c"
 }

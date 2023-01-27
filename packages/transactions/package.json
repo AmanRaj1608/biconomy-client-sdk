@@ -42,5 +42,6 @@
     "@ethersproject/constants": "^5.6.1",
     "ethereumjs-util": "^7.1.5",
     "ethers": "^5.6.9"
-  }
+  },
+  "gitHead": "bdaf60c7ca514e53f8b96fbf0935b0786539b56c"
 }

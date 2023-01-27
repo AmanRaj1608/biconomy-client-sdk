@@ -41,5 +41,6 @@
     "@ethersproject/providers": "^5.6.8",
     "@gnosis.pm/safe-deployments": "^1.16.0",
     "web3-core": "^1.7.1"
-  }
+  },
+  "gitHead": "bdaf60c7ca514e53f8b96fbf0935b0786539b56c"
 }
