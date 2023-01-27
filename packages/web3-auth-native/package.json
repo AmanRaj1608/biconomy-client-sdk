@@ -1,6 +1,6 @@
 {
   "name": "@biconomy-sdk-dev/web3-auth-native",
-  "version": "1.0.10",
+  "version": "1.0.9",
   "description": "web3-auth expo react-native for biconomy sdk.",
   "main": "dist/web3AuthNative.cjs.js",
   "module": "dist/web3AuthNative.esm.js",
@@ -69,5 +69,5 @@
     "rimraf": "^3.0.2",
     "typescript": "^4.9.3"
   },
-  "gitHead": "bdaf60c7ca514e53f8b96fbf0935b0786539b56c"
+  "gitHead": "828c62d0c33b7f0388fa13eb148ba3898272b629"
 }

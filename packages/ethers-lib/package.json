@@ -1,6 +1,6 @@
 {
   "name": "@biconomy-sdk-dev/ethers-lib",
-  "version": "1.0.10",
+  "version": "1.0.9",
   "description": "Ethers library adapter to be used by Biconomy SDK",
   "main": "./dist/src/index.js",
   "typings": "./dist/src/index.d.ts",
@@ -53,5 +53,5 @@
   "peerDependencies": {
     "ethers": "^5.5.3"
   },
-  "gitHead": "bdaf60c7ca514e53f8b96fbf0935b0786539b56c"
+  "gitHead": "828c62d0c33b7f0388fa13eb148ba3898272b629"
 }
