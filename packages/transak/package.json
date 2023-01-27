@@ -1,6 +1,6 @@
 {
   "name": "@biconomy-sdk-dev/transak",
-  "version": "1.0.9",
+  "version": "1.0.11",
   "description": "transak for biconomy sdk",
   "main": "./dist/src/index.js",
   "typings": "./dist/src/index.d.ts",
@@ -37,5 +37,5 @@
   "dependencies": {
     "@transak/transak-sdk": "^1.2.3"
   },
-  "gitHead": "bdaf60c7ca514e53f8b96fbf0935b0786539b56c"
+  "gitHead": "b3cd88862385c23259a9c917a4ee1ca8a2d2a532"
 }

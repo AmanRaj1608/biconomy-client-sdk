@@ -1,6 +1,6 @@
 {
   "name": "@biconomy-sdk-dev/core-types",
-  "version": "1.0.9",
+  "version": "1.0.11",
   "description": "Biconomy Client SDK types",
   "main": "./dist/src/index.js",
   "typings": "./dist/src/index.d.ts",
@@ -42,5 +42,5 @@
     "@gnosis.pm/safe-deployments": "^1.16.0",
     "web3-core": "^1.7.1"
   },
-  "gitHead": "bdaf60c7ca514e53f8b96fbf0935b0786539b56c"
+  "gitHead": "b3cd88862385c23259a9c917a4ee1ca8a2d2a532"
 }
