@@ -29,7 +29,8 @@ import {
   SmartAccountConfig,
   IMetaTransaction,
   NetworkConfig,
-  ZERO_ADDRESS
+  ZERO_ADDRESS,
+  IFallbackAPI
 } from '@biconomy/core-types'
 import { TypedDataSigner } from '@ethersproject/abstract-signer'
 import NodeClient, {
@@ -42,10 +43,11 @@ import NodeClient, {
   UsdBalanceResponse
 } from '@biconomy/node-client'
 import { Web3Provider } from '@ethersproject/providers'
-import { IRelayer, RestRelayer } from '@biconomy/relayer'
+import { IRelayer, RestRelayer, FallbackRelayer, IFallbackRelayer } from '@biconomy/relayer'
 import * as _ from 'lodash'
 import TransactionManager, {
   ContractUtils,
+  encodeMultiSend,
   smartAccountSignMessage,
   smartAccountSignTypedData
 } from '@biconomy/transactions'
@@ -57,19 +59,19 @@ import { SmartAccountSigner } from './signers/SmartAccountSigner'
 import {
   newProvider,
   ERC4337EthersProvider,
+  FallbackGasTankAPI,
   ERC4337EthersSigner,
-  BaseWalletAPI
+  BaseAccountAPI
 } from '@biconomy/account-abstraction'
 
-import { ethers, Signer } from 'ethers'
-import { TransactionRequest } from '@ethersproject/providers/lib'
+import { BigNumber, ethers, Signer } from 'ethers'
 
 let isLogsEnabled = false
 
 // Create an instance of Smart Account with multi-chain support.
 class SmartAccount extends EventEmitter {
   // By default latest version
-  DEFAULT_VERSION: SmartAccountVersion = '1.0.1'
+  DEFAULT_VERSION: SmartAccountVersion = '1.0.0'
 
   // Smart Account Context provies relevant contract instances for chainId asked (default is current active chain)
   context!: { [chainId: number]: SmartAccountContext }
@@ -100,6 +102,10 @@ class SmartAccount extends EventEmitter {
   // relayer.relay => dispatch to blockchain
   // other methods are useful for the widget
   relayer!: IRelayer
+
+  fallbackRelayer!: IFallbackRelayer
+
+  private signingService!: IFallbackAPI
 
   // Owner of the Smart Account common between all chains
   owner!: string
@@ -189,10 +195,10 @@ class SmartAccount extends EventEmitter {
     return this.signer
   }
 
-  getSmartAccountAPI(chainId: ChainId): BaseWalletAPI {
+  getSmartAccountAPI(chainId: ChainId): BaseAccountAPI {
     chainId = chainId ? chainId : this.#smartAccountConfig.activeNetworkId
     const aaSigner: ERC4337EthersSigner = this.aaProvider[chainId].getSigner()
-    return aaSigner.smartWalletAPI
+    return aaSigner.smartAccountAPI
   }
 
   getProviderUrl(network: ChainConfig): string {
@@ -268,6 +274,17 @@ class SmartAccount extends EventEmitter {
 
       const clientConfig = this.getNetworkConfigValues(network.chainId)
 
+      this.signingService = new FallbackGasTankAPI(
+        this.#smartAccountConfig.biconomySigningServiceUrl || '',
+        clientConfig.dappAPIKey || ''
+      )
+
+      this.fallbackRelayer = new FallbackRelayer({
+        dappAPIKey: clientConfig.dappAPIKey || '',
+        url: this.#smartAccountConfig.relayerUrl,
+        relayerServiceUrl: this.#smartAccountConfig.socketServerUrl
+      })
+
       this.aaProvider[network.chainId] = await newProvider(
         new ethers.providers.JsonRpcProvider(providerUrl),
         {
@@ -323,7 +340,6 @@ class SmartAccount extends EventEmitter {
     transactionDto: TransactionDto
   ): Promise<TransactionResponse> {
     let { version, chainId } = transactionDto
-    const { transaction } = transactionDto
     chainId = chainId ? chainId : this.#smartAccountConfig.activeNetworkId
     version = version ? version : this.DEFAULT_VERSION
     const aaSigner = this.aaProvider[chainId].getSigner()
@@ -331,29 +347,171 @@ class SmartAccount extends EventEmitter {
     await this.initializeContractsAtChain(chainId)
     const multiSendContract = this.contractUtils.multiSendContract[chainId][version].getContract()
 
-    const isDelegate = transaction.to === multiSendContract.address ? true : false
+    const isDelegate = transactionDto.transaction.to === multiSendContract.address ? true : false
 
-    const customData: any = {}
-    let transactionRequest: TransactionRequest = { ...transaction }
+    let isFallbackEnabled = false
+    try {
+      const { data } = await this.nodeClient.isFallbackEnabled()
+      isFallbackEnabled = data.enable_fallback_flow
+      this._logMessage('isFallbackEnabled')
+      this._logMessage(data.enable_fallback_flow)
+    } catch (error) {
+      console.error('isFallbackEnabled', error)
+    }
+
+    if (!isFallbackEnabled) {
+      const response = await aaSigner.sendTransaction(
+        transactionDto.transaction,
+        false,
+        isDelegate,
+        this
+      )
+      return response
+    }
+
+    // create IWalletTransaction instance
+    const transaction = await this.createTransaction(transactionDto)
+
+    // create instance of SmartWallet contracts
+    let walletContract =
+      this.contractUtils.smartWalletContract[chainId][this.DEFAULT_VERSION].getContract()
+    walletContract = walletContract.attach(this.address)
+
+    const signature = await this.signTransaction({
+      version: this.DEFAULT_VERSION,
+      tx: transaction,
+      chainId,
+      signer: this.signer
+    })
+    const refundInfo: IFeeRefundV1_0_0 | IFeeRefundV1_0_1 = {
+      baseGas: transaction.baseGas,
+      gasPrice: transaction.gasPrice,
+      tokenGasPriceFactor: transaction.tokenGasPriceFactor,
+      gasToken: transaction.gasToken,
+      refundReceiver: transaction.refundReceiver
+    }
+    let execTransaction = await walletContract.populateTransaction.execTransaction(
+      transaction,
+      0, // review batchId : 0
+      refundInfo,
+      signature
+    )
+
+    // create instance of fallbackGasTank contracts to get nonce
+    let fallbackGasTank = this.contractUtils.fallbackGasTankContract[chainId][version].getContract()
+    const gasTankNonce = await fallbackGasTank.getNonce(this.address)
 
     const isDeployed = await this.contractUtils.isDeployed(
       chainId,
       this.DEFAULT_VERSION,
       this.address
     )
+    // dappIdentifier and signature will be added by signing service
+    const fallbackUserOp = {
+      sender: this.address,
+      target: this.address,
+      nonce: gasTankNonce,
+      callData: execTransaction.data || '',
+      callGasLimit: BigNumber.from(500000), // will be updated below
+      dappIdentifier: '',
+      signature: ''
+    }
+    if (!isDeployed) {
+      const { multiSendCall, walletFactory } = this.getSmartAccountContext(chainId)
+      const { owner, entryPointAddress, fallbackHandlerAddress } =
+        await this.contractUtils.getSmartAccountState(
+          this.smartAccountState,
+          this.DEFAULT_VERSION,
+          this.#smartAccountConfig.activeNetworkId
+        )
+      const factoryInterface = walletFactory.getInterface()
+      const txs = [
+        {
+          to: walletFactory.getAddress(),
+          value: 0,
+          data: factoryInterface.encodeFunctionData(
+            factoryInterface.getFunction('deployCounterFactualWallet'),
+            [owner, entryPointAddress, fallbackHandlerAddress, 0]
+          ),
+          operation: 0
+        },
+        {
+          to: this.address,
+          value: 0,
+          data: execTransaction.data || '',
+          operation: 0
+        }
+      ]
+      const txnData = multiSendCall
+        .getInterface()
+        .encodeFunctionData('multiSend', [encodeMultiSend(txs)])
+      console.log('txnData', txnData)
 
-    if (!isDeployed || isDelegate) {
-      customData.appliedGasLimit = ethers.constants.Two.pow(24) // estimateGas for execFromEntryPoint
-      customData.isDeployed = isDeployed
-      customData.isBatchedToMultiSend = isDelegate
-
-      transactionRequest = { ...transactionRequest, customData }
+      // update fallbackUserOp with target and multiSend call data
+      fallbackUserOp.target = multiSendCall.getAddress()
+      fallbackUserOp.callData = txnData
+      // TODO: check if callGasLimit is valid
+    }
+    try {
+      const callGasLimit = await this.transactionManager.estimateGasUsed(
+        this.address,
+        fallbackUserOp.callData,
+        chainId
+      )
+      fallbackUserOp.callGasLimit = BigNumber.from(callGasLimit)
+      this._logMessage('callGasLimit')
+      this._logMessage(callGasLimit)
+    } catch (error) {
+      this._logMessage('Error in estimating callGasLimit')
     }
 
-    // Todo: should be able to pass requiredTxGas (gasLimit for execute when execFromEntryPoint is called)
+    console.log('fallbackUserOp before', fallbackUserOp)
+    // send fallback user operation to signing service to get signature and dappIdentifier
+    const signingServiceResponse = await this.signingService.getDappIdentifierAndSign(
+      fallbackUserOp
+    )
+    fallbackUserOp.dappIdentifier = signingServiceResponse.dappIdentifier
+    fallbackUserOp.signature = signingServiceResponse.signature
+    console.log('fallbackUserOp after', fallbackUserOp)
 
-    const response = await aaSigner.sendTransaction(transactionRequest, false, isDelegate, this)
-    return response
+    execTransaction = await fallbackGasTank.populateTransaction.handleFallbackUserOp(fallbackUserOp)
+
+    const rawTrx: RawTransactionType = {
+      to: fallbackGasTank.address, // gas tank address
+      data: execTransaction.data, // populateTransaction by fallbackGasTank contract handleFallbackUserop
+      value: 0, // tx value
+      chainId: chainId
+    }
+    const signedTx: SignedTransaction = {
+      rawTx: rawTrx,
+      tx: transaction
+    }
+    const state = await this.contractUtils.getSmartAccountState(
+      this.smartAccountState,
+      this.DEFAULT_VERSION,
+      this.#smartAccountConfig.activeNetworkId
+    )
+    const relayTrx: RelayTransaction = {
+      signedTx,
+      config: state,
+      context: this.getSmartAccountContext(chainId)
+    }
+    const gasLimit = transactionDto.transaction.gasLimit
+    if (gasLimit) {
+      relayTrx.gasLimit = {
+        hex: gasLimit.toString(),
+        type: 'hex'
+      }
+    }
+    if (!isDeployed) {
+      const gasLimit = {
+        hex: '0x1E8480',
+        type: 'hex'
+      }
+      relayTrx.gasLimit = gasLimit
+    }
+    const relayResponse = await this.fallbackRelayer.relay(relayTrx, this)
+    return relayResponse
   }
 
   public async sendGaslessTransactionBatch(
@@ -566,7 +724,7 @@ class SmartAccount extends EventEmitter {
     const rawTx: RawTransactionType = {
       to: tx.to,
       data: tx.data,
-      value: 0,
+      value: 0, // review
       chainId: chainId
     }
 
@@ -987,12 +1145,11 @@ export const DefaultSmartAccountConfig: SmartAccountConfig = {
     ChainId.BSC_TESTNET
   ],
   signType: SignTypeMethod.EIP712_SIGN,
-  backendUrl: 'https://sdk-backend.prod.biconomy.io/v1',
-  relayerUrl: 'https://sdk-relayer.prod.biconomy.io/api/v1/relay',
-  socketServerUrl: 'wss://sdk-ws.prod.biconomy.io/connection/websocket',
-  bundlerUrl: 'https://sdk-relayer.prod.biconomy.io/api/v1/relay',
-  biconomySigningServiceUrl:
-    'https://us-central1-biconomy-staging.cloudfunctions.net/signing-service',
+  backendUrl: 'https://sdk-backend.staging.biconomy.io/v1',
+  relayerUrl: 'https://sdk-relayer.staging.biconomy.io/api/v1/relay',
+  socketServerUrl: 'wss://sdk-testing-ws.staging.biconomy.io/connection/websocket',
+  bundlerUrl: 'https://sdk-relayer.staging.biconomy.io/api/v1/relay',
+  biconomySigningServiceUrl: 'https://paymaster.staging.biconomy.io',
   // TODO : has to be public provider urls (local config / backend node)
   networkConfig: [
     {
