@@ -1,5 +1,5 @@
-import { UserOperation } from '@biconomy/core-types' // review
-import { NotPromise, packUserOp } from '@biconomy/common'  // '@account-abstraction/utils'
+import { UserOperation } from '@biconomy-sdk-dev/core-types' // review
+import { NotPromise, packUserOp } from '@biconomy-sdk-dev/common'  // '@account-abstraction/utils'
 import { arrayify, hexlify } from 'ethers/lib/utils'
 
 export interface GasOverheads {

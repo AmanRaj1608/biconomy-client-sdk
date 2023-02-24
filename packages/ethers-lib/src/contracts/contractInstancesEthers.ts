@@ -22,7 +22,7 @@ import { FallbackGasTankContractV100__factory as FallbackGasTankContractV100 } f
 import FallbackGasTankEthersContract_v1_0_0 from './FallbackGasTank/v1.0.0/FallbackGasTankEthersContract'
 
 import { JsonRpcProvider } from '@ethersproject/providers'
-import { SmartAccountVersion } from '@biconomy/core-types'
+import { SmartAccountVersion } from '@biconomy-sdk-dev/core-types'
 
 export function getSmartWalletContractInstance(
   smartAccountVersion: SmartAccountVersion,

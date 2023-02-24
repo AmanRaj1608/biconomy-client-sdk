@@ -1,5 +1,5 @@
-import { ChainConfig } from '@biconomy/node-client'
-import { ChainId } from '@biconomy/core-types'
+import { ChainConfig } from '@biconomy-sdk-dev/node-client'
+import { ChainId } from '@biconomy-sdk-dev/core-types'
 import {
   SmartWalletContract,
   SmartWalletFactoryContract,
@@ -7,9 +7,9 @@ import {
   MultiSendCallOnlyContract,
   SmartAccountVersion,
   FallbackGasTankContract
-} from '@biconomy/core-types'
+} from '@biconomy-sdk-dev/core-types'
 
-import EthersAdapter from '@biconomy/ethers-lib'
+import EthersAdapter from '@biconomy-sdk-dev/ethers-lib'
 
 export function getSmartWalletFactoryContract(
   smartAccountVersion: SmartAccountVersion,

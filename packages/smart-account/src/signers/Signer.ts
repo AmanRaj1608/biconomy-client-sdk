@@ -5,11 +5,11 @@ import {
 } from '@ethersproject/abstract-signer'
 
 // ChainId , SmartAccountContext, SmartAccountConfig, SmartAccountState from @biconomy/core-types
-import { ChainId, SignTransactionDto } from '@biconomy/core-types'
+import { ChainId, SignTransactionDto } from '@biconomy-sdk-dev/core-types'
 
 import { JsonRpcProvider, TransactionResponse } from '@ethersproject/providers'
 // Might as well be RpcRelayer
-import { IRelayer } from '@biconomy/relayer'
+import { IRelayer } from '@biconomy-sdk-dev/relayer'
 import { BytesLike } from '@ethersproject/bytes'
 import { Deferrable } from 'ethers/lib/utils'
 import { TransactionRequest } from '@ethersproject/providers'

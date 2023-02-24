@@ -16,7 +16,7 @@ OR
 
 ```
 // import package
-import SmartAccount from "@biconomy/smart-account"
+import SmartAccount from "@biconomy-sdk-dev/smart-account"
 
 // Get the EOA and provider from you choice of your wallet.
 const { provider, address } = useWeb3AuthContext();
@@ -56,9 +56,9 @@ console.log('isDeployed ', isDeployed)
 # Get Smart Contract Wallet Balances
 
 ```
-import { BalancesDto } from '@biconomy/node-client'
+import { BalancesDto } from '@biconomy-sdk-dev/node-client'
 
-import { ChainId } from '@biconomy/core-types'
+import { ChainId } from '@biconomy-sdk-dev/core-types'
 
 const balanceParams: BalancesDto =
       {

@@ -5,7 +5,7 @@
 ## Usage
 
 ```typescript
-import { Estimator } from '@biconomy/gas-estimator';
+import { Estimator } from '@biconomy-sdk-dev/gas-estimator';
 
 // TODO: DEMONSTRATE API
 ```

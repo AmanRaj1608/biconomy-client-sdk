@@ -31,7 +31,7 @@ import {
   NetworkConfig,
   ZERO_ADDRESS,
   IFallbackAPI
-} from '@biconomy/core-types'
+} from '@biconomy-sdk-dev/core-types'
 import { TypedDataSigner } from '@ethersproject/abstract-signer'
 import NodeClient, {
   ChainConfig,
@@ -41,16 +41,16 @@ import NodeClient, {
   BalancesResponse,
   BalancesDto,
   UsdBalanceResponse
-} from '@biconomy/node-client'
+} from '@biconomy-sdk-dev/node-client'
 import { Web3Provider } from '@ethersproject/providers'
-import { IRelayer, RestRelayer, FallbackRelayer, IFallbackRelayer } from '@biconomy/relayer'
+import { IRelayer, RestRelayer, FallbackRelayer, IFallbackRelayer } from '@biconomy-sdk-dev/relayer'
 import * as _ from 'lodash'
 import TransactionManager, {
   ContractUtils,
   encodeMultiSend,
   smartAccountSignMessage,
   smartAccountSignTypedData
-} from '@biconomy/transactions'
+} from '@biconomy-sdk-dev/transactions'
 import EventEmitter from 'events'
 import { TransactionResponse } from '@ethersproject/providers'
 import { SmartAccountSigner } from './signers/SmartAccountSigner'
@@ -62,7 +62,7 @@ import {
   FallbackGasTankAPI,
   ERC4337EthersSigner,
   BaseAccountAPI
-} from '@biconomy/account-abstraction'
+} from '@biconomy-sdk-dev/account-abstraction'
 
 import { BigNumber, ethers, Signer } from 'ethers'
 

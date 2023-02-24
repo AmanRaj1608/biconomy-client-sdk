@@ -14,5 +14,5 @@ import {
   SmartAccountVersion,
   GasLimit,
   ChainId
-} from "@biconomy/core-types";
+} from "@biconomy-sdk-dev/core-types";
 ```

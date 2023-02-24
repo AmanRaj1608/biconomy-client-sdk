@@ -1,6 +1,6 @@
 import { ethers, BigNumber, BigNumberish } from 'ethers'
 import { Provider } from '@ethersproject/providers'
-import { UserOperation } from '@biconomy/core-types' // review
+import { UserOperation } from '@biconomy-sdk-dev/core-types' // review
 import { ClientConfig } from './ClientConfig' // ClientConfig is needed in this design
 
 /*
@@ -17,11 +17,11 @@ import {
   EntryPointContractV100,
   SmartWalletFactoryV100,
   SmartWalletContractV100
-} from '@biconomy/ethers-lib'
+} from '@biconomy-sdk-dev/ethers-lib'
 import { TransactionDetailsForUserOp } from './TransactionDetailsForUserOp'
 import { resolveProperties } from 'ethers/lib/utils'
-import { IPaymasterAPI } from '@biconomy/core-types' // only use interface
-import { getUserOpHash, NotPromise, packUserOp } from '@biconomy/common'
+import { IPaymasterAPI } from '@biconomy-sdk-dev/core-types' // only use interface
+import { getUserOpHash, NotPromise, packUserOp } from '@biconomy-sdk-dev/common'
 import { calcPreVerificationGas, GasOverheads } from './calcPreVerificationGas'
 
 // might make use of this

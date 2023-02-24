@@ -17,7 +17,7 @@ OR
 
 ```
 // import package
-import NodeClient from '@biconomy/node-client'
+import NodeClient from '@biconomy-sdk-dev/node-client'
 
 // initialisation
 
@@ -52,9 +52,9 @@ console.log('trxDetail ', trxDetail)
 # Get Smart Contract Wallet Balances
 
 ```
-import { BalancesDto } from '@biconomy/node-client'
+import { BalancesDto } from '@biconomy-sdk-dev/node-client'
 
-import { ChainId } from '@biconomy/core-types'
+import { ChainId } from '@biconomy-sdk-dev/core-types'
 
 const address = '0xabc......'
 

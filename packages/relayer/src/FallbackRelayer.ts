@@ -2,7 +2,7 @@ import { JsonRpcProvider, TransactionReceipt, TransactionResponse } from '@ether
 import { BigNumber, ethers } from 'ethers'
 import { IFallbackRelayer } from '.'
 
-import { RelayTransaction, FallbackRelayerOptions, GasLimit, ChainId } from '@biconomy/core-types'
+import { RelayTransaction, FallbackRelayerOptions, GasLimit, ChainId } from '@biconomy-sdk-dev/core-types'
 import { HttpMethod, sendRequest } from './utils/HttpRequests'
 import { ClientMessenger } from 'messaging-sdk'
 import WebSocket, { EventEmitter } from 'isomorphic-ws'

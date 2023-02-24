@@ -1,16 +1,16 @@
 import { BigNumber, BigNumberish } from 'ethers'
-import { EntryPointContractV100 } from '@biconomy/ethers-lib'
+import { EntryPointContractV100 } from '@biconomy-sdk-dev/ethers-lib'
 
 import { ClientConfig } from './ClientConfig' // added in this design
 import { arrayify, hexConcat } from 'ethers/lib/utils'
 import { Signer } from '@ethersproject/abstract-signer'
 import { TransactionDetailsForUserOp } from './TransactionDetailsForUserOp'
-import { UserOperation } from '@biconomy/core-types'
+import { UserOperation } from '@biconomy-sdk-dev/core-types'
 import { BaseApiParams, BaseAccountAPI } from './BaseAccountAPI'
 import { Provider } from '@ethersproject/providers'
 import { WalletFactoryAPI } from './WalletFactoryAPI' // could be renamed smart account factory
 import { BiconomyPaymasterAPI } from './BiconomyPaymasterAPI'
-import { ZERO_ADDRESS } from '@biconomy/core-types'
+import { ZERO_ADDRESS } from '@biconomy-sdk-dev/core-types'
 import { GasOverheads } from './calcPreVerificationGas'
 
 

@@ -1,5 +1,5 @@
-import { FeeOptionsResponse } from '@biconomy/core-types'
-import { RelayTransaction, RelayResponse } from '@biconomy/core-types'
+import { FeeOptionsResponse } from '@biconomy-sdk-dev/core-types'
+import { RelayTransaction, RelayResponse } from '@biconomy-sdk-dev/core-types'
 import { TransactionResponse } from '@ethersproject/providers'
 import { EventEmitter } from 'isomorphic-ws'
 export interface IRelayer {
