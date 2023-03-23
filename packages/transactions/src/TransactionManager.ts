@@ -32,6 +32,7 @@ import INodeClient, {
 } from '@biconomy/node-client'
 
 import { IRelayer } from '@biconomy/relayer'
+import { Logger } from '@biconomy/common'
 import ContractUtils from './ContractUtils'
 import { Utils } from './Utils'
 class TransactionManager {
@@ -80,46 +81,6 @@ class TransactionManager {
   // review return type
   getNodeClient(): INodeClient {
     return this.nodeClient
-  }
-
-  // todo add return type
-  async prepareDeployAndPayFees(chainId: ChainId, version: string) {
-    const gasPriceQuotesResponse: FeeOptionsResponse = await this.relayer.getFeeOptions(chainId)
-    const feeOptionsAvailable: Array<TokenData> = gasPriceQuotesResponse.data.response
-    const feeQuotes: Array<FeeQuote> = []
-
-    const smartAccountState = await this.contractUtils.getSmartAccountState()
-
-    const estimateWalletDeployment = await this.estimateSmartAccountDeployment({
-      chainId: chainId,
-      version,
-      owner: smartAccountState.owner
-    })
-
-    feeOptionsAvailable.forEach((feeOption) => {
-      // Make it a constant
-      const estimatedGasUsed: number = estimateWalletDeployment + 77369
-
-      // const feeTokenTransferGas = feeOption.feeTokenTransferGas
-      const tokenGasPrice = feeOption.tokenGasPrice || 0
-      const offset = feeOption.offset || 1
-      const payment = (tokenGasPrice * estimatedGasUsed) / offset
-
-      const feeQuote = {
-        symbol: feeOption.symbol,
-        address: feeOption.address,
-        decimal: feeOption.decimal,
-        logoUrl: feeOption.logoUrl,
-        tokenGasPrice: feeOption.tokenGasPrice,
-        offset: feeOption.offset,
-        payment: payment,
-        refundReceiver: feeOption.refundReceiver
-      }
-
-      feeQuotes.push(feeQuote)
-    })
-
-    return feeQuotes
   }
 
   // Onboarding scenario where assets inside counterfactual smart account pays for it's deployment
@@ -179,7 +140,7 @@ class TransactionManager {
     if (await this.contractUtils.isDeployed(chainId, smartAccountState.address)) {
       nonce = (await walletContract.getNonce(batchId)).toNumber()
     }
-    console.log('nonce: ', nonce)
+    Logger.log('nonce: ', nonce)
 
     let operation = isDelegate ? 1 : 0
 
@@ -217,7 +178,7 @@ class TransactionManager {
     if (await this.contractUtils.isDeployed(chainId, smartAccountState.address)) {
       nonce = (await walletContract.getNonce(batchId)).toNumber()
     }
-    console.log('nonce: ', nonce)
+    Logger.log('nonce: ', nonce)
 
     const txs: IMetaTransaction[] = []
 
@@ -237,7 +198,7 @@ class TransactionManager {
       txs,
       nonce
     )
-    console.log('wallet txn without refund ', walletTx)
+    Logger.log('wallet txn without refund ', walletTx)
 
     return walletTx
   }
@@ -435,7 +396,7 @@ class TransactionManager {
       // We know it's going to get deployed by Relayer but we handle refund cost here..
       additionalBaseGas += estimateWalletDeployment // wallet deployment gas
     }
-    console.log('nonce: ', nonce)
+    Logger.log('nonce: ', nonce)
 
     // in terms of calculating baseGas we should know if wallet is deployed or not otherwise it needs to consider deployment cost
     // (will get batched by relayer)
@@ -446,7 +407,7 @@ class TransactionManager {
       data: transaction.data || '0x',
       operation: OperationType.Call
     }
-    console.log(internalTx)
+    Logger.log('internalTx: ', internalTx)
 
     let targetTxGas, baseGas, handlePaymentEstimate
     const regularOffSet = GAS_USAGE_OFFSET
@@ -464,7 +425,7 @@ class TransactionManager {
       }
       const response = await this.nodeClient.estimateRequiredTxGasOverride(estimateRequiredTxGas)
       const requiredTxGasEstimate = Number(response.data.gas) + 700000
-      console.log('required txgas estimate (with override) ', requiredTxGasEstimate)
+      Logger.log('required txgas estimate (with override) ', requiredTxGasEstimate)
       targetTxGas = requiredTxGasEstimate
 
       // baseGas?
@@ -489,7 +450,7 @@ class TransactionManager {
       )
       handlePaymentEstimate = Number(handlePaymentResponse.data.gas)
 
-      console.log('handlePaymentEstimate (with override) ', handlePaymentEstimate)
+      Logger.log('handlePaymentEstimate (with override) ', handlePaymentEstimate)
       baseGas = handlePaymentEstimate + regularOffSet + additionalBaseGas
     } else {
       const estimateRequiredTxGas: EstimateRequiredTxGasDto = {
@@ -499,12 +460,10 @@ class TransactionManager {
       }
 
       const response = await this.nodeClient.estimateRequiredTxGas(estimateRequiredTxGas)
-      // considerable offset ref gnosis safe service client safeTxGas
       // TODO
       // handle exception responses and when gas returned is 0
-      // We could stop the further flow
       const requiredTxGasEstimate = Number(response.data.gas) + 30000
-      console.log('required txgas estimate ', requiredTxGasEstimate)
+      Logger.log('required txgas estimate ', requiredTxGasEstimate)
       targetTxGas = requiredTxGasEstimate
 
       const refundDetails: IFeeRefundHandlePayment = {
@@ -527,7 +486,7 @@ class TransactionManager {
       )
       handlePaymentEstimate = Number(handlePaymentResponse.data.gas)
 
-      console.log('handlePaymentEstimate ', handlePaymentEstimate)
+      Logger.log('handlePaymentEstimate ', handlePaymentEstimate)
 
       baseGas = handlePaymentEstimate + regularOffSet + additionalBaseGas // delegate call + event emission + state updates + potential deployment
     }
@@ -550,7 +509,6 @@ class TransactionManager {
 
   /**
    * Prepares compatible IWalletTransaction object based on Transaction Request
-   * @todo Rename based on other variations to prepare transaction
    * @notice This transaction is with fee refund (smart account pays using it's own assets accepted by relayers)
    * @param refundTransactionBatchDto
    * @returns
@@ -573,20 +531,20 @@ class TransactionManager {
     if (isDeployed) {
       nonce = (await walletContract.getNonce(batchId)).toNumber()
     } else {
-      // TODO : estimation cost can be passed
+      // TODO : estimation cost can be passed which is constant for biconomy smart account deployment
       const estimateWalletDeployment = await this.estimateSmartAccountDeployment({
         chainId: chainId,
         version,
         owner: smartAccountState.owner
       })
       // We know it's going to get deployed by Relayer but we handle refund cost here..
-      console.log('estimateWalletDeployment ', estimateWalletDeployment)
+      Logger.log('estimateWalletDeployment ', estimateWalletDeployment)
 
       // We know it's going to get deployed by Relayer
       // but we handle refund cost here..
       additionalBaseGas += estimateWalletDeployment // wallet deployment gas
     }
-    console.log('nonce: ', nonce)
+    Logger.log('nonce: ', nonce)
 
     const txs: IMetaTransaction[] = this.utils.buildSmartAccountTransactions(transactions)
 
@@ -595,7 +553,7 @@ class TransactionManager {
       txs,
       nonce
     )
-    console.log('wallet txn with refund ', walletTx)
+    Logger.log('wallet txn with refund ', walletTx)
 
     const internalTx: MetaTransactionData = {
       to: walletTx.to,
@@ -603,7 +561,7 @@ class TransactionManager {
       data: walletTx.data || '0x',
       operation: walletTx.operation
     }
-    console.log(internalTx)
+    Logger.log('internalTx ', internalTx)
 
     let targetTxGas, baseGas
     const regularOffSet = GAS_USAGE_OFFSET
@@ -622,12 +580,12 @@ class TransactionManager {
 
       // not getting accurate value for undeployed wallet
       // TODO
-      // Review
       const requiredTxGasEstimate = Number(response.data.gas) + 700000
-      console.log('required txgas estimate (with override) ', requiredTxGasEstimate)
+      Logger.log('required txgas estimate (with override) ', requiredTxGasEstimate)
       targetTxGas = requiredTxGasEstimate
 
       // baseGas?
+      // Allow overriding wallet address just for this estimations
       // Depending on feeToken provide baseGas! We could use constant value provided by the relayer
 
       const refundDetails: IFeeRefundHandlePayment = {
@@ -650,7 +608,7 @@ class TransactionManager {
         estimateHandlePaymentGas
       )
       const handlePaymentEstimate = Number(handlePaymentResponse.data.gas)
-      console.log('handlePaymentEstimate (with override) ', handlePaymentEstimate)
+      Logger.log('handlePaymentEstimate (with override) ', handlePaymentEstimate)
       baseGas = handlePaymentEstimate + regularOffSet + additionalBaseGas
     } else {
       const estimateRequiredTxGas: EstimateRequiredTxGasDto = {
@@ -665,13 +623,13 @@ class TransactionManager {
       // handle exception responses and when gas returned is 0
       // We could stop the further flow
       const requiredTxGasEstimate = Number(response.data.gas) + 30000
-      console.log('required txgas estimate ', requiredTxGasEstimate)
+      Logger.log('required txgas estimate ', requiredTxGasEstimate)
       targetTxGas = requiredTxGasEstimate
 
       const refundDetails: IFeeRefundHandlePayment = {
         gasUsed: requiredTxGasEstimate,
         baseGas: requiredTxGasEstimate,
-        gasPrice: feeQuote.tokenGasPrice, // this would be token gas price // review
+        gasPrice: feeQuote.tokenGasPrice, // this would be token gas price
         tokenGasPriceFactor: feeQuote.offset || 1,
         gasToken: feeQuote.address,
         refundReceiver: feeQuote.refundReceiver || ZERO_ADDRESS
@@ -687,7 +645,7 @@ class TransactionManager {
         estimateHandlePaymentGas
       )
       const handlePaymentEstimate = Number(handlePaymentResponse.data.gas)
-      console.log('handlePaymentEstimate ', handlePaymentEstimate)
+      Logger.log('handlePaymentEstimate ', handlePaymentEstimate)
       baseGas = handlePaymentEstimate + regularOffSet + additionalBaseGas // delegate call + event emission + state updates + potential deployment
     }
 

@@ -19,8 +19,6 @@ export const EIP_DOMAIN = {
   ]
 }
 
-// todo
-// Create a method that returns EIP712_ACCOUNT_TX_TYPE based on the version passed
 export const EIP712_ACCOUNT_TX_TYPE = {
   // "AccountTx(address to,uint256 value,bytes data,uint8 operation,uint256 targetTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)"
   AccountTx: [
@@ -37,8 +35,6 @@ export const EIP712_ACCOUNT_TX_TYPE = {
     { type: "uint256", name: "nonce" },
   ]
 }
-
-// TODO: { EIP712_SMART_ACCOUNT_MESSAGE_TYPE } needs to be change to { EIP712_SAFE_MESSAGE_TYPE }  
 
 export const EIP712_SMART_ACCOUNT_MESSAGE_TYPE = {
   // "SmartAccountMessage(bytes message)"
@@ -92,7 +88,7 @@ export const calculateSmartAccountMessageHash = (
 }
 
 export const smartAccountSignTypedData = async (
-  signer: Signer & TypedDataSigner,
+  signer: Signer,
   wallet: Contract,
   SmartAccountTx: IWalletTransaction,
   chainId?: BigNumberish
@@ -102,7 +98,7 @@ export const smartAccountSignTypedData = async (
   const signerAddress = await signer.getAddress()
   return {
     signer: signerAddress,
-    data: await signer._signTypedData(
+    data: await (signer as Signer & TypedDataSigner)._signTypedData(
       { verifyingContract: wallet.address, chainId: cid },
       EIP712_ACCOUNT_TX_TYPE,
       SmartAccountTx

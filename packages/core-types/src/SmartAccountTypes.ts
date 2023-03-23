@@ -9,12 +9,12 @@ import { MultiSendCallOnlyContract } from './contracts/MultiSendCallOnlyContract
 import { SmartWalletContract } from './contracts/SmartWalletContract'
 import { GasLimit } from './TransactionTypes'
 import { Signer } from 'ethers'
-import { IPaymasterAPI } from 'AccountAbstractionTypes'
+import { IPaymasterAPI } from './AccountAbstractionTypes'
 
 export enum Environments {
-  STAGING = 'STAGING',
-  MAINNET = 'MAINNET',
-  DEVNET = 'DEVNET'
+  DEV = "DEVELOPMENT", // Strictly testnets
+  QA = "STAGING", // Teset networks staging
+  PROD = "PRODUCTION", // Has all mainnet and testnet config
 }
 
 export interface SmartAccountConfig {
@@ -28,7 +28,6 @@ export interface SmartAccountConfig {
   entryPointAddress?: string
   biconomySigningServiceUrl?: string
   bundlerUrl?: string
-  debug?: boolean
   environment?: Environments 
 }
 
