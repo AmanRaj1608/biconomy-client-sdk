@@ -1,7 +1,7 @@
 import { TransactionResponse } from '@ethersproject/providers'
 import { Signer as AbstractSigner, ethers } from 'ethers'
 import { IRelayer } from '.'
-
+import { Contract } from 'ethers'
 import {
   DeployWallet,
   FeeOptionsResponse,
@@ -15,7 +15,6 @@ import { MetaTransaction, encodeMultiSend } from './utils/MultiSend'
 // Not meant to use for production environment for transaction ordering.
 export class LocalRelayer implements IRelayer {
   private signer: AbstractSigner
-  // TODO : review members
   // private txnOptions: TransactionRequest
 
   constructor(signer: AbstractSigner) {
@@ -27,12 +26,9 @@ export class LocalRelayer implements IRelayer {
   // Defines a type DeployWallet that takes config, context for SCW in this context
   async deployWallet(deployWallet: DeployWallet): Promise<TransactionResponse> {
     // checkd if already deployed
-    // TODO : Review for index and ownership transfer case
     const { config, context, index = 0 } = deployWallet
-    const { address } = config
-    const { walletFactory } = context
-    const isExist = await walletFactory.isWalletExist(address)
-    if (isExist) {
+    const { isDeployed } = config
+    if ( isDeployed ) {
       throw new Error('Smart Account is Already Deployed')
     }
     const walletDeployTxn = this.prepareWalletDeploy({ config, context, index })
@@ -46,15 +42,16 @@ export class LocalRelayer implements IRelayer {
   prepareWalletDeploy(deployWallet: DeployWallet): { to: string; data: string } {
     const { config, context, index = 0 } = deployWallet
 
-    const { walletFactory } = context
+    const { walletFactory, baseWallet } = context
     const { owner, entryPointAddress, fallbackHandlerAddress } = config
     const factoryInterface = walletFactory.getInterface()
 
     return {
       to: walletFactory.getAddress(), // from context
       data: factoryInterface.encodeFunctionData(
-        factoryInterface.getFunction('deployCounterFactualWallet'),
-        [owner, entryPointAddress, fallbackHandlerAddress, index]
+        factoryInterface.getFunction('deployCounterFactualAccount'),
+        [ owner,
+          index]
       )
     }
   }

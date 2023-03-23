@@ -15,11 +15,6 @@ class SmartWalletFactoryContractEthers implements SmartWalletFactoryContract {
     return this.contract
   }
 
-  async isWalletExist(wallet: string): Promise<boolean> {
-    const doesExist = await this.contract.isWalletExist(wallet)
-    return doesExist
-  }
-
   getAddress(): string {
     return this.contract.address
   }
@@ -28,32 +23,26 @@ class SmartWalletFactoryContractEthers implements SmartWalletFactoryContract {
     this.contract.attach(address)
   }
 
-  async deployCounterFactualWallet(
+  async deployCounterFactualAccount(
     owner: string,
-    entryPoint: string,
-    handler: string,
     index: number
   ): Promise<ITransactionResult> {
-    const resultSet = await this.contract.deployCounterFactualWallet(
+    const resultSet = await this.contract.deployCounterFactualAccount(
       owner,
-      entryPoint,
-      handler,
       index
     )
     return toTxResult(resultSet)
   }
 
-  async deployWallet(
+  async deployAccount(
     owner: string,
-    entryPoint: string,
-    handler: string
   ): Promise<ITransactionResult> {
-    const resultSet = await this.contract.deployWallet(owner, entryPoint, handler)
+    const resultSet = await this.contract.deployAccount(owner)
     return toTxResult(resultSet)
   }
 
-  async getAddressForCounterfactualWallet(owner: string, index: number): Promise<string> {
-    return this.contract.getAddressForCounterfactualWallet(owner, index)
+  async getAddressForCounterFactualAccount(owner: string, index: number): Promise<string> {
+    return this.contract.getAddressForCounterFactualAccount(owner, index)
   }
 }
 

@@ -33,16 +33,13 @@ export class Estimator {
     // Check if available from current state
     const isDeployed = await this.contractUtils.isDeployed(
       chainId,
-      version,
       smartAccountState.address // SmartAccountState
     )
     if (!isDeployed) {
       const estimateWalletDeployment = await this.estimateSmartAccountDeployment({
         chainId,
         version,
-        owner: smartAccountState.owner, // SmartAccountState
-        entryPointAddress: smartAccountState.entryPointAddress, // SmartAccountState
-        fallbackHandlerAddress: smartAccountState.fallbackHandlerAddress // SmartAccountState
+        owner: smartAccountState.owner
       })
       console.log('estimateWalletDeployment ', estimateWalletDeployment)
 
@@ -99,16 +96,13 @@ export class Estimator {
     // Check if available from current state
     const isDeployed = await this.contractUtils.isDeployed(
       chainId,
-      version,
       smartAccountState.address
     )
     if (!isDeployed) {
       const estimateWalletDeployment = await this.estimateSmartAccountDeployment({
         chainId,
         version,
-        owner: smartAccountState.owner,
-        entryPointAddress: smartAccountState.entryPointAddress,
-        fallbackHandlerAddress: smartAccountState.fallbackHandlerAddress
+        owner: smartAccountState.owner
       })
       console.log('estimateWalletDeployment ', estimateWalletDeployment)
       estimatedGasUsed += estimateWalletDeployment
@@ -154,20 +148,30 @@ export class Estimator {
     return estimatedGasUsed
   }
 
+  // Generic function to estimate gas used for any contract call
+  async estimateGasUsed(target: string, data: string, chainId: number): Promise<number> {
+    const estimatorInterface = new ethers.utils.Interface(GasEstimator.abi)
+    const encodedEstimateData = estimatorInterface.encodeFunctionData('estimate', [target, data])
+
+    let estimateGasUsedResponse = await this.nodeClient.estimateExternalGas({
+      chainId,
+      encodedData: encodedEstimateData
+    })
+    return Number(estimateGasUsedResponse.data.gas)
+  }
+
   async estimateSmartAccountDeployment(
     estimateSmartAccountDeploymentDto: EstimateSmartAccountDeploymentDto
   ): Promise<number> {
     const estimatorInterface = new ethers.utils.Interface(GasEstimator.abi)
-    const { chainId, version, owner, entryPointAddress, fallbackHandlerAddress } =
+    const { chainId, version, owner } =
       estimateSmartAccountDeploymentDto
     const walletFactoryInterface =
       this.contractUtils.smartWalletFactoryContract[chainId][version].getInterface()
     const encodedEstimateData = estimatorInterface.encodeFunctionData('estimate', [
       this.contractUtils.smartWalletFactoryContract[chainId][version].getAddress(),
-      walletFactoryInterface.encodeFunctionData('deployCounterFactualWallet', [
+      walletFactoryInterface.encodeFunctionData('deployCounterFactualAccount', [
         owner,
-        entryPointAddress,
-        fallbackHandlerAddress,
         0
       ])
     ])

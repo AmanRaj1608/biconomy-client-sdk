@@ -11,6 +11,12 @@ import { GasLimit } from './TransactionTypes'
 import { Signer } from 'ethers'
 import { IPaymasterAPI } from 'AccountAbstractionTypes'
 
+export enum Environments {
+  STAGING = 'STAGING',
+  MAINNET = 'MAINNET',
+  DEVNET = 'DEVNET'
+}
+
 export interface SmartAccountConfig {
   activeNetworkId: ChainId
   supportedNetworksIds: ChainId[]
@@ -23,6 +29,7 @@ export interface SmartAccountConfig {
   biconomySigningServiceUrl?: string
   bundlerUrl?: string
   debug?: boolean
+  environment?: Environments 
 }
 
 export enum SignTypeMethod {
@@ -49,8 +56,6 @@ export type EstimateSmartAccountDeploymentDto = {
   chainId: ChainId
   version: string
   owner: string
-  entryPointAddress: string
-  fallbackHandlerAddress: string
 }
 
 export type SmartAccountState = {
@@ -60,6 +65,7 @@ export type SmartAccountState = {
   owner: string // multichain (EVM)
   isDeployed: boolean // chain specific
   entryPointAddress: string // chain specific?
+  implementationAddress: string
   fallbackHandlerAddress: string // chain specific?
 }
 
@@ -68,6 +74,14 @@ export type AddressForCounterFactualWalletDto = {
   index: number
   chainId: ChainId
   version: string
+}
+
+export type InitializerDto = {
+  index?: number
+  chainId: ChainId
+  version?: string
+  owner: string
+  txServiceUrl: string
 }
 
 export type SignTransactionDto = {
