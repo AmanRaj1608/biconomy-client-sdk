@@ -12,7 +12,6 @@ interface HttpRequest {
   body?: Record<string, any>
   headers?: object
 }
-
 export async function sendRequest<T>({ url, method, body, headers = {} }: HttpRequest): Promise<T> {
   const response = await fetch(url, {
     method,
@@ -23,18 +22,31 @@ export async function sendRequest<T>({ url, method, body, headers = {} }: HttpRe
     },
     body: JSON.stringify(body)
   })
-
+  console.log('response ', response);
+  
   let jsonResponse
   try {
     jsonResponse = await response.json()
   } catch (error) {
+    console.log('error ', error)
     if (!response.ok) {
+      console.log(JSON.stringify(response));
+      
       throw new Error(response.statusText)
     }
   }
 
   if (response.ok) {
     return jsonResponse as T
+  }
+  if (jsonResponse.error) {
+    throw new Error(jsonResponse.error);
+  }
+  if (jsonResponse.message) {
+    throw new Error(jsonResponse.message);
+  }
+  if (jsonResponse.msg) {
+    throw new Error(jsonResponse.msg);
   }
   if (jsonResponse.data) {
     throw new Error(jsonResponse.data)
