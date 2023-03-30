@@ -183,16 +183,18 @@ export type TokenInfo = {
 export type ISmartAccount = {
   version: SmartAccountVersion
   smartAccountAddress: string
-  isDeployed: boolean,
-  chainId: ChainId,
-  eoaAddress: string,
-  entryPointAddress: string,
-  handlerAddress: string,
-  index: number,
-  implementationAddress: string,
-  fallBackHandlerAddress: string,
-  owner: string,
+  isDeployed: boolean
+  chainId: ChainId
+  eoaAddress: string
+  entryPointAddress: string
+  handlerAddress: string
+  index: number
+  implementationAddress: string
+  fallBackHandlerAddress: string
+  owner: string
   factoryAddress: string
+  createdAt: number
+  updatedAt: number
 }
 
 export type IBalances = {

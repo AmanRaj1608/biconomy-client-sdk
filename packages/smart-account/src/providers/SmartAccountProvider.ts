@@ -2,7 +2,7 @@ import { Web3Provider, BaseProvider } from '@ethersproject/providers'
 import { SmartAccountSigner } from '../signers/SmartAccountSigner'
 import { Signer } from 'ethers'
 import { TransactionResponse } from '@ethersproject/providers'
-import { ChainId, IWalletTransaction } from '@biconomy/core-types'
+import { ChainId } from '@biconomy/core-types'
 
 // Note: WIP. Not used by SmartAccount at the moment
 // deadcode
@@ -66,8 +66,7 @@ export class SmartAccountProvider extends BaseProvider {
   // getTransactionReceipt
 
   // Helper for fabricating a response in a format usable by ethers users...
-  async constructSmartAccountTransactionResponse(
-  ): Promise<TransactionResponse | null> {
+  async constructSmartAccountTransactionResponse(): Promise<TransactionResponse | null> {
     return null
   }
 

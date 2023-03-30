@@ -22,17 +22,17 @@ export const EIP_DOMAIN = {
 export const EIP712_ACCOUNT_TX_TYPE = {
   // "AccountTx(address to,uint256 value,bytes data,uint8 operation,uint256 targetTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)"
   AccountTx: [
-    { type: "address", name: "to" },
-    { type: "uint256", name: "value" },
-    { type: "bytes", name: "data" },
-    { type: "uint8", name: "operation" },
-    { type: "uint256", name: "targetTxGas" },
-    { type: "uint256", name: "baseGas" },
-    { type: "uint256", name: "gasPrice" },
-    { type: "uint256", name: "tokenGasPriceFactor" },
-    { type: "address", name: "gasToken" },
-    { type: "address", name: "refundReceiver" },
-    { type: "uint256", name: "nonce" },
+    { type: 'address', name: 'to' },
+    { type: 'uint256', name: 'value' },
+    { type: 'bytes', name: 'data' },
+    { type: 'uint8', name: 'operation' },
+    { type: 'uint256', name: 'targetTxGas' },
+    { type: 'uint256', name: 'baseGas' },
+    { type: 'uint256', name: 'gasPrice' },
+    { type: 'uint256', name: 'tokenGasPriceFactor' },
+    { type: 'address', name: 'gasToken' },
+    { type: 'address', name: 'refundReceiver' },
+    { type: 'uint256', name: 'nonce' }
   ]
 }
 
@@ -93,8 +93,9 @@ export const smartAccountSignTypedData = async (
   SmartAccountTx: IWalletTransaction,
   chainId?: BigNumberish
 ): Promise<SmartAccountSignature> => {
-  if (!chainId && !signer.provider) throw Error('Provider required to retrieve chainId')
-  const cid = chainId || (await signer.provider!.getNetwork()).chainId
+  if (!chainId && !signer?.provider) throw Error('Provider required to retrieve chainId')
+  /* eslint-disable  @typescript-eslint/no-non-null-assertion */
+  const cid = chainId ?? (await signer.provider!.getNetwork())?.chainId
   const signerAddress = await signer.getAddress()
   return {
     signer: signerAddress,
@@ -121,7 +122,8 @@ export const smartAccountSignMessage = async (
   SmartAccountTx: IWalletTransaction,
   chainId: ChainId
 ): Promise<SmartAccountSignature> => {
-  const cid = chainId ? chainId : (await signer.provider!.getNetwork()).chainId
+  if (!chainId && !signer?.provider) throw Error('Provider required to retrieve chainId')
+  const cid = chainId ?? (await signer.provider!.getNetwork()).chainId
   if (!cid) {
     throw Error('smartAccountSignMessage: Chain Id Not Found')
   }
@@ -161,12 +163,7 @@ export const executeTx = async (
     gasToken: SmartAccountTx.gasToken,
     refundReceiver: SmartAccountTx.refundReceiver
   }
-  return wallet.execTransaction(
-    transaction,
-    refundInfo,
-    signatureBytes,
-    overrides || {}
-  )
+  return wallet.execTransaction(transaction, refundInfo, signatureBytes, overrides || {})
 }
 
 /* eslint-disable  @typescript-eslint/no-explicit-any */

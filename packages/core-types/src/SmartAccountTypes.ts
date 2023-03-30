@@ -12,9 +12,9 @@ import { Signer } from 'ethers'
 import { IPaymasterAPI } from './AccountAbstractionTypes'
 
 export enum Environments {
-  DEV = "DEVELOPMENT", // Strictly testnets
-  QA = "STAGING", // Teset networks staging
-  PROD = "PRODUCTION", // Has all mainnet and testnet config
+  DEV = 'DEVELOPMENT', // Strictly testnets
+  QA = 'STAGING', // Teset networks staging
+  PROD = 'PRODUCTION' // Has all mainnet and testnet config
 }
 
 export interface SmartAccountConfig {
@@ -28,7 +28,7 @@ export interface SmartAccountConfig {
   entryPointAddress?: string
   biconomySigningServiceUrl?: string
   bundlerUrl?: string
-  environment?: Environments 
+  environment?: Environments
 }
 
 export enum SignTypeMethod {
@@ -92,14 +92,12 @@ export type SignTransactionDto = {
 
 export type SendTransactionDto = {
   tx: IWalletTransaction
-  batchId?: number
   chainId?: ChainId
   gasLimit?: GasLimit
 }
 
 export type SendSignedTransactionDto = {
   tx: IWalletTransaction
-  batchId?: number
   chainId?: ChainId
   gasLimit?: GasLimit
   signature: string
@@ -108,14 +106,12 @@ export type SendSignedTransactionDto = {
 export type PrepareRefundTransactionDto = {
   version?: string
   transaction: Transaction
-  batchId?: number
   chainId?: ChainId
 }
 
 export type PrepareRefundTransactionsDto = {
   version?: string
   transactions: Transaction[]
-  batchId?: number
   chainId?: ChainId
 }
 
@@ -123,27 +119,23 @@ export type RefundTransactionDto = {
   version?: string
   transaction: Transaction
   feeQuote: FeeQuote
-  batchId?: number
   chainId?: ChainId
 }
 export type RefundTransactionBatchDto = {
   version?: string
   transactions: Transaction[]
   feeQuote: FeeQuote
-  batchId?: number
   chainId?: ChainId
 }
 
 export type TransactionDto = {
   version?: string
   transaction: Transaction
-  batchId?: number
   chainId?: ChainId
 }
 
 export type TransactionBatchDto = {
   version?: string
   transactions: Transaction[]
-  batchId?: number
   chainId?: ChainId
 }

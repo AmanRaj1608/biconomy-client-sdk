@@ -46,10 +46,8 @@ export interface VerificationGasLimits {
 export const DefaultGasLimits: VerificationGasLimits = {
   validateUserOpGas: 61943,
   validatePaymasterUserOpGas: 25101,
-  postOpGas: 10877,
+  postOpGas: 10877
 }
-
-
 
 /**
  * An implementation of the BaseAccountAPI using the (biconomy) SmartAccount contract.
@@ -81,13 +79,18 @@ export class SmartAccountAPI extends BaseAccountAPI {
     overheads?: Partial<GasOverheads>
   ) {
     super(provider, entryPoint, clientConfig, accountAddress, overheads)
-    if (clientConfig.customPaymasterAPI) {
+    if (!clientConfig.dappAPIKey || clientConfig.dappAPIKey === '') {
+      this.paymasterAPI = undefined
+    } else if (clientConfig.customPaymasterAPI) {
       this.paymasterAPI = clientConfig.customPaymasterAPI
     } else {
-      this.paymasterAPI = new BiconomyPaymasterAPI(
-        clientConfig.biconomySigningServiceUrl,
-        clientConfig.dappAPIKey
-      )
+      this.paymasterAPI = new BiconomyPaymasterAPI({
+        signingServiceUrl: clientConfig.biconomySigningServiceUrl,
+        dappAPIKey: clientConfig.dappAPIKey,
+        strictSponsorshipMode: clientConfig.strictSponsorshipMode
+          ? clientConfig.strictSponsorshipMode
+          : false
+      })
     }
   }
 
@@ -121,49 +124,49 @@ export class SmartAccountAPI extends BaseAccountAPI {
    * should cover cost of putting calldata on-chain, and some overhead.
    * actual overhead depends on the expected bundle size
    */
-  async getPreVerificationGas (userOp: Partial<UserOperation>): Promise<number> {
+  async getPreVerificationGas(userOp: Partial<UserOperation>): Promise<number> {
     const p = await resolveProperties(userOp)
     return calcPreVerificationGas(p, this.overheads)
   }
 
-   /**
+  /**
    * return maximum gas used for verification.
    * NOTE: createUnsignedUserOp will add to this value the cost of creation, if the contract is not yet created.
    */
-   async getVerificationGasLimit (): Promise<BigNumberish> {
+  async getVerificationGasLimit(): Promise<BigNumberish> {
     // Verification gas should be max(initGas(wallet deployment) + validateUserOp + validatePaymasterUserOp , postOp)
     const initCode = await this.getInitCode()
 
     const initGas = await this.estimateCreationGas(initCode)
     console.log('initgas estimated is ', initGas)
 
-    let verificationGasLimit = initGas;
-    const validateUserOpGas = DefaultGasLimits.validatePaymasterUserOpGas + DefaultGasLimits.validateUserOpGas;
-    const postOpGas = DefaultGasLimits.postOpGas;
+    let verificationGasLimit = initGas
+    const validateUserOpGas =
+      DefaultGasLimits.validatePaymasterUserOpGas + DefaultGasLimits.validateUserOpGas
+    const postOpGas = DefaultGasLimits.postOpGas
 
-    verificationGasLimit = BigNumber.from(validateUserOpGas).add(initGas);
+    verificationGasLimit = BigNumber.from(validateUserOpGas).add(initGas)
 
-    
-    if(BigNumber.from(postOpGas).gt(verificationGasLimit)) {
-      verificationGasLimit = postOpGas;
+    if (BigNumber.from(postOpGas).gt(verificationGasLimit)) {
+      verificationGasLimit = postOpGas
     }
     return verificationGasLimit
   }
 
-  async encodeExecuteCall(target: string, value: BigNumberish, data: string): Promise<string>{
+  async encodeExecuteCall(target: string, value: BigNumberish, data: string): Promise<string> {
     const walletContract = await this._getSmartAccountContract()
-    return walletContract.interface.encodeFunctionData('executeCall', [
-      target,
-      value,
-      data,
-    ])
+    return walletContract.interface.encodeFunctionData('executeCall', [target, value, data])
   }
-  async encodeExecuteBatchCall(target: string[], value: BigNumberish[], data: string[]): Promise<string>{
+  async encodeExecuteBatchCall(
+    target: string[],
+    value: BigNumberish[],
+    data: string[]
+  ): Promise<string> {
     const walletContract = await this._getSmartAccountContract()
     const encodeData = walletContract.interface.encodeFunctionData('executeBatchCall', [
       target,
       value,
-      data,
+      data
     ])
     Logger.log('encodeData ', encodeData)
     return encodeData
@@ -177,18 +180,13 @@ export class SmartAccountAPI extends BaseAccountAPI {
    */
   async createUnsignedUserOp(info: TransactionDetailsForBatchUserOp): Promise<UserOperation> {
     const { callData, callGasLimit } = await this.encodeUserOpCallDataAndGasLimit(info)
-    console.log(callData, callGasLimit);
+    console.log(callData, callGasLimit)
 
     const initCode = await this.getInitCode()
-    
-    const verificationGasLimit = BigNumber.from(await this.getVerificationGasLimit());
 
-    let {
-      maxFeePerGas,
-      maxPriorityFeePerGas
-    } = 
-    
-    info
+    const verificationGasLimit = BigNumber.from(await this.getVerificationGasLimit())
+
+    let { maxFeePerGas, maxPriorityFeePerGas } = info
     if (maxFeePerGas == null || maxPriorityFeePerGas == null) {
       const feeData = await this.provider.getFeeData()
       if (maxFeePerGas == null) {
@@ -198,8 +196,8 @@ export class SmartAccountAPI extends BaseAccountAPI {
         maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ?? undefined
       }
     }
-
-    let partialUserOp: any = {
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
+    const partialUserOp: any = {
       sender: await this.getAccountAddress(),
       nonce: await this.nonce(),
       initCode,
@@ -214,15 +212,16 @@ export class SmartAccountAPI extends BaseAccountAPI {
     const preVerificationGas = await this.getPreVerificationGas(partialUserOp)
     partialUserOp.preVerificationGas = preVerificationGas
 
-    partialUserOp.paymasterAndData =
-      this.paymasterAPI == null ? '0x' : await this.paymasterAPI.getPaymasterAndData(partialUserOp)
+    partialUserOp.paymasterAndData = !this.paymasterAPI
+      ? '0x'
+      : await this.paymasterAPI.getPaymasterAndData(partialUserOp)
     return {
       ...partialUserOp,
       signature: ''
     }
   }
 
-  async signUserOpHash (userOpHash: string): Promise<string> {
+  async signUserOpHash(userOpHash: string): Promise<string> {
     return await this.owner.signMessage(arrayify(userOpHash))
   }
 }
